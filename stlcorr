@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import sys,os
-import hal
+#import hal
 from struct import *
 from optparse import Option, OptionParser
 
@@ -47,6 +47,23 @@ def dump_buffer(b):
         f = unpack('iii',b[start:end])
         print >> sys.stderr, "face %d %d: %s " % (i,start,f)
 
+def debug_file(filename):
+    a = stltool.stl(filename)
+    (vertices, faces) = a.unique_vertices(a.facets)
+
+    # Intialize list
+    lst = []
+    for vertex_idx in xrange(len(vertices)):
+        lst.append([])
+
+    for face_idx in xrange(len(faces)):
+        for vertex_idx in faces[face_idx]:
+            lst[vertex_idx].append(face_idx)
+
+    for i in xrange(len(lst)):
+        print vertices[i]
+        print lst[i]
+
 def load_file(b, filename):
     a = stltool.stl(filename)
     (vertices, faces) = a.unique_vertices(a.facets)
@@ -78,9 +95,10 @@ def load_file(b, filename):
         print >> sys.stderr, "loaded."
 
 def get_buffer():
-    c = hal.component("notused")
-    sm = hal.shm(c,key,size)
-    return sm.getbuffer()
+    return 0
+#    c = hal.component("notused")
+#    sm = hal.shm(c,key,size)
+#    return sm.getbuffer()
 
 def gcode(s,filename,scale,rotate,translate):
     if filename:
@@ -167,6 +185,8 @@ def main():
         gcode(s,filename,scale,rotate,translate)
     else:
         s.export(binary=opts.binary)
+
+    debug_file(filename)
 
 if __name__ == '__main__':
     main()

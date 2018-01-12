@@ -68,10 +68,10 @@ def main():
             units = 1.0
         else:
             units = 25.4
-	xmin = float(inifile.find("AXIS_0", "MIN_LIMIT")) * units
-	ymin = float(inifile.find("AXIS_1", "MIN_LIMIT")) * units
-	xmax = float(inifile.find("AXIS_0", "MAX_LIMIT")) * units
-	ymax = float(inifile.find("AXIS_1", "MAX_LIMIT")) * units
+        xmin = float(inifile.find("AXIS_0", "MIN_LIMIT")) * units
+        ymin = float(inifile.find("AXIS_1", "MIN_LIMIT")) * units
+        xmax = float(inifile.find("AXIS_0", "MAX_LIMIT")) * units
+        ymax = float(inifile.find("AXIS_1", "MAX_LIMIT")) * units
         zbound = 0
         if opts.zbound:
             zbound = opts.zbound
