@@ -7,6 +7,7 @@
 #define MAX_DIM 3
 typedef double vertex_t[MAX_DIM];
 typedef vertex_t* face_t[3];
+typedef vertex_t* vertex_ptr;
 
 struct kd_node_t{
     //double v[MAX_DIM];
@@ -19,18 +20,24 @@ double
 dist(struct kd_node_t *a, struct kd_node_t *b, int dim)
 {
     double t, d = 0;
-    while (dim--) {
-        t = a->v[dim] - b->v[dim];
+    while (dim--)
+    {
+        vertex_ptr a_ptr = a->v;
+        vertex_ptr b_ptr = b->v;
+
+        t = (*a_ptr)[dim] - (*b_ptr)[dim];
         d += t * t;
     }
     return d;
 }
 
-void swap(struct kd_node_t *x, struct kd_node_t *y) {
-    double tmp[MAX_DIM];
-    memcpy(tmp,  x->v, sizeof(tmp));
-    memcpy(x->v, y->v, sizeof(tmp));
-    memcpy(y->v, tmp,  sizeof(tmp));
+void swap(struct kd_node_t *a_node, struct kd_node_t *b_node)
+{
+    struct kd_node_t tmp_node;
+
+    memcpy(&tmp_node,  a_node, sizeof(struct kd_node_t));
+    memcpy(a_node,     b_node, sizeof(struct kd_node_t));
+    memcpy(b_node,  &tmp_node, sizeof(struct kd_node_t));
 }
 
 /* see quickselect method */
@@ -44,11 +51,14 @@ find_median(struct kd_node_t *start, struct kd_node_t *end, int idx)
     struct kd_node_t *p, *store, *md = start + (end - start) / 2;
     double pivot;
     while (1) {
-        pivot = *(md->v)[idx];
+        vertex_ptr v_ptr = md->v;
+        pivot = (*v_ptr)[idx];
 
         swap(md, end - 1);
-        for (store = p = start; p < end; p++) {
-            if (*(p->v)[idx] < pivot) {
+        for (store = p = start; p < end; p++)
+        {
+            vertex_ptr v_ptr = p->v;
+            if ((*v_ptr)[idx] < pivot) {
                 if (p != store)
                     swap(p, store);
                 store++;
@@ -57,7 +67,9 @@ find_median(struct kd_node_t *start, struct kd_node_t *end, int idx)
         swap(store, end - 1);
 
         /* median has duplicate values */
-        if (store->v[idx] == md->v[idx])
+        v_ptr = md->v;
+        vertex_ptr store_v_ptr = store->v;
+        if ((*store_v_ptr)[idx] == (*v_ptr)[idx])
             return md;
 
         if (store > md) end = store;
@@ -89,8 +101,13 @@ void nearest(struct kd_node_t *root, struct kd_node_t *nd, int i, int dim,
     double d, dx, dx2;
 
     if (!root) return;
+
     d = dist(root, nd, dim);
-    dx = root->v[i] - nd->v[i];
+
+    vertex_ptr root_v_ptr = root->v;
+    vertex_ptr nd_v_ptr = nd->v;
+
+    dx = (*root_v_ptr)[i] - (*nd_v_ptr)[i];
     dx2 = dx * dx;
 
     visited++;
@@ -118,23 +135,24 @@ int main(void)
         { -12.0,  180.0, 1.4}, // 1
         { -44.0, -121.0, 1.2}, // 2
         { 210.0, -120.0, 0.2}, // 3
-        {-100.0,  200.0, 0.5}  // 4
+        {-100.0,  200.0, 0.5}, // 4
     };
 
     // Array of faces
     face_t f[] = {
         {&v[0], &v[1], &v[2]},
         {&v[1], &v[3], &v[2]},
-        {&v[4], &v[1], &v[0]}
+        {&v[4], &v[1], &v[0]},
+        NULL
     };
 
-    face_t* faces0[] = {&f[0], &f[1]};
-    face_t* faces1[] = {&f[0], &f[1], &f[2]};
-    face_t* faces2[] = {&f[0], &f[1]};
-    face_t* faces3[] = {&f[1]};
-    face_t* faces4[] = {&f[2]};
+    face_t* faces0[] = {&f[0], &f[1], NULL};
+    face_t* faces1[] = {&f[0], &f[1], &f[2], NULL};
+    face_t* faces2[] = {&f[0], &f[1], NULL};
+    face_t* faces3[] = {&f[1], NULL};
+    face_t* faces4[] = {&f[2], NULL};
 
-    struct kd_node_t wp[] = {
+    struct kd_node_t nodes[] = {
         {
             &v[0],
             faces0
@@ -154,23 +172,30 @@ int main(void)
         {
             &v[4],
             faces4
-        },
+        }
     };
 
-    vertex_t testVertex = {205.0, 55.0, 0.0};
+    vertex_t testVertex = {200.0, -200.0, 0.0};
 
-    struct kd_node_t testNode = { .v = &testVertex, NULL };
+    struct kd_node_t testNode = { .v = &testVertex, NULL, NULL, NULL };
     struct kd_node_t *root, *found, *million;
     double best_dist;
 
-    printf(">> WP tree\nsearching for v0(%g), v1(%g)\n", **(testNode.v), *(*(testNode.v)+1));
+    //printf(">> WP tree\nsearching for v0(%g), v1(%g)\n", **(testNode.v), *(*(testNode.v)+1));
+    vertex_ptr target_vertex = testNode.v;
+    printf(">> Searching for vertex (x=%g, y=%g, z=%g) in kd-tree\n",
+            (*target_vertex)[0], (*target_vertex)[1], (*target_vertex)[2]);
+    int nodes_number = sizeof(nodes) / sizeof(struct kd_node_t);
+    printf("Number of nodes = %d\n", nodes_number);
 
-    root = make_tree(wp, sizeof(wp) / sizeof(wp[1]), 0, 2);
+    root = make_tree(nodes, nodes_number, 0, 2);
 
     nearest(root, &testNode, 0, 2, &found, &best_dist);
 
-    printf("found (%g, %g) dist %g\nseen %d nodes\n\n",
-            **(found->v), *(*(found->v)+1), sqrt(best_dist), visited);
+    vertex_ptr found_v_ptr = found->v;
+    printf("found nearest vertex (x=%g, y=%g, z=%g) dist %g\nseen %d nodes\n\n",
+            (*found_v_ptr)[0], (*found_v_ptr)[1], (*found_v_ptr)[2],
+            sqrt(best_dist), visited);
 }
 
 #if 0
