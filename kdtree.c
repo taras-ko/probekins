@@ -127,16 +127,62 @@ void nearest(struct kd_node_t *root, struct kd_node_t *nd, int i, int dim,
     nearest(dx > 0 ? root->right : root->left, nd, i, dim, best, best_dist);
 }
 
+typedef struct {
+    int n_vertices;
+    int n_faces;
+    vertex_t vertices[1]; //...n_vertices
+    // followed by:
+    // face_t faces[1]; // 1..n fac
+    // starting at &vertices[n_vertices+1]
+} mesh_struct;
+
+typedef struct {
+    int n_vertices;
+    vertex_t vertices[1];
+} shmem_vertices;
+
+typedef struct {
+    int n_faces;
+    face2_t faces[1];
+} shmem_faces;
+
+typedef int face2_t[3];
+
 int main(void)
 {
+    int n_vertices = 5;
+    int n_faces = 3;
+    size_t mp_size = sizeof(int)*2 + sizeof(vertex_t)*n_vertices
+        + sizeof(face2_t)*n_faces;
+
+    mesh_struct *mp = malloc(mp_size);
+    memset(mp, 0, mp_size);
+
+    mp->n_vertices = n_vertices;
+    mp->n_faces = n_faces;
+
     // Array of vertices
-    vertex_t v[] = {
+    vertex_t vertices[] = {
         {-150.0,  111.0, 2.1}, // 0
         { -12.0,  180.0, 1.4}, // 1
         { -44.0, -121.0, 1.2}, // 2
         { 210.0, -120.0, 0.2}, // 3
         {-100.0,  200.0, 0.5}, // 4
     };
+
+    memcpy(mp->vertices, vertices, sizeof(vertices)/sizeof(vertex_t));
+
+    face2_t faces[] = {
+        {0, 1, 2},
+        {1, 3, 2},
+        {4, 1, 0}
+    };
+
+    face2_t *faces_ptr = (face2_t*) &mp->vertices[mp->n_vertices];
+
+    memcpy(faces_ptr, faces, sizeof(faces)/sizeof(face2_t));
+
+    vertex_t *v = vertices;
 
     // Array of faces
     face_t f[] = {
@@ -198,72 +244,3 @@ int main(void)
             sqrt(best_dist), visited);
 }
 
-#if 0
-#define N 1000000
-#define rand1() (rand() / (double)RAND_MAX)
-#define rand_pt(v) { v.x[0] = rand1(); v.x[1] = rand1(); v.x[2] = rand1(); }
-int main1(void)
-{
-    int i;
-    struct kd_node_t wp[] = {
-        {},
-        {{2, 3}}, {{5, 4}}, {{9, 6}}, {{4, 7}}, {{8, 1}}, {{7, 2}}
-    };
-    struct kd_node_t testNode = {{9, 2}};
-    struct kd_node_t *root, *found, *million;
-    double best_dist;
-
-    root = make_tree(wp, sizeof(wp) / sizeof(wp[1]), 0, 2);
-
-    visited = 0;
-    found = 0;
-    nearest(root, &testNode, 0, 2, &found, &best_dist);
-
-    printf(">> WP tree\nsearching for (%g, %g)\n"
-            "found (%g, %g) dist %g\nseen %d nodes\n\n",
-            testNode.x[0], testNode.x[1],
-            found->v[0], found->v[1], sqrt(best_dist), visited);
-
-    million =(struct kd_node_t*) calloc(N, sizeof(struct kd_node_t));
-    srand(time(0));
-    for (i = 0; i < N; i++) rand_pt(million[i]);
-
-    root = make_tree(million, N, 0, 3);
-    rand_pt(testNode);
-
-    visited = 0;
-    found = 0;
-    nearest(root, &testNode, 0, 3, &found, &best_dist);
-
-    printf(">> Million tree\nsearching for (%g, %g, %g)\n"
-            "found (%g, %g, %g) dist %g\nseen %d nodes\n",
-            testNode.x[0], testNode.x[1], testNode.x[2],
-            found->v[0], found->v[1], found->v[2],
-            sqrt(best_dist), visited);
-
-    /* search many random points in million tree to see average behavior.
-       tree size vs avg nodes visited:
-       10      ~  7
-       100     ~ 16.5
-       1000        ~ 25.5
-       10000       ~ 32.8
-       100000      ~ 38.3
-       1000000     ~ 42.6
-       10000000    ~ 46.7              */
-    int sum = 0, test_runs = 100000;
-    for (i = 0; i < test_runs; i++) {
-        found = 0;
-        visited = 0;
-        rand_pt(testNode);
-        nearest(root, &testNode, 0, 3, &found, &best_dist);
-        sum += visited;
-    }
-    printf("\n>> Million tree\n"
-            "visited %d nodes for %d random findings (%f per lookup)\n",
-            sum, test_runs, sum/(double)test_runs);
-
-    // free(million);
-
-    return 0;
-}
-#endif
