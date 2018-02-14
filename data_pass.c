@@ -3,11 +3,6 @@
 #include <string.h>
 
 typedef struct {
-    int n_faces;
-    int face_idx[1]; //...n_faces
-} face_group_t;
-
-typedef struct {
     double coord[3];
     int face_group_size;
 } vertex_t;
@@ -17,7 +12,7 @@ typedef int face_t[3];
 typedef struct {
     int n_vertices;
     int n_faces;
-    int face_groups_arr_size;
+    int n_face_groups;
     vertex_t vertices[1]; //...n_vertices
     // followed by:
     // face_t faces[1]; // 1..n fac
@@ -27,18 +22,13 @@ typedef struct {
     // starting at &faces[n_faces]
 } mesh_struct;
 
-typedef struct {
-    int n_face_groups;
-    face_group_t face_groups[1]; //...n_groups
-} shmem_face_groups;
-
 int main()
 {
     int n_face_groups, n_vertices, n_faces;
     n_vertices = 5;
-    n_face_groups = 5;
     n_faces = 3;
-    int face_groups_arr_size = 9;
+    n_face_groups = 9;
+
     int n_faces0 = 2;
     int n_faces1 = 3;
     int n_faces2 = 2;
@@ -47,7 +37,7 @@ int main()
     size_t ms_size = sizeof(int) * 3 +
         sizeof(vertex_t) * n_vertices +
         sizeof(face_t) * n_faces +
-        sizeof(int) * face_groups_arr_size;
+        sizeof(int) * n_face_groups;
 
     printf("Bytes allocated: %d\n", ms_size);
 
@@ -56,7 +46,7 @@ int main()
 
     mp->n_vertices = n_vertices;
     mp->n_faces = n_faces;
-    mp->face_groups_arr_size = face_groups_arr_size;
+    mp->n_face_groups = n_face_groups;
     mp->vertices[0].coord[0] = -150.0;
     mp->vertices[0].coord[1] = 111.0;
     mp->vertices[0].coord[2] = 2.1;
@@ -95,7 +85,7 @@ int main()
     mp_faces[2][1] = 1;
     mp_faces[2][2] = 0;
 
-    int* mp_face_groups_arr = (int*) &mp_faces[3];
+    int* mp_face_groups_arr = (int*) &mp_faces[n_faces];
     mp_face_groups_arr[0] = 0;
     mp_face_groups_arr[1] = 1;
     mp_face_groups_arr[2] = 0;
@@ -110,15 +100,20 @@ int main()
 
     printf("Number of vertices: %d\n", mp->n_vertices);
     printf("Number of faces: %d\n", mp->n_faces);
-    printf("Size of face groups array: %d\n", mp->face_groups_arr_size);
+    printf("Size of face groups array: %d\n", mp->n_face_groups);
 
-    for (i = 0; i < sh_fg->n_face_groups; ++i)
+    for (i = 0; i < mp->n_vertices; ++i)
     {
-        printf("\tGroup %d\n", i);
-        printf("\t n_faces %d: ", sh_fg->face_groups[i].n_faces);
+        printf("\tVertex %d\n", i);
+        int face_group_size = mp->vertices[i].face_group_size;
+        printf("\t face group size %d: ", face_group_size);
+
+        printf("\t Belongs to faces: ");
         int j;
-        for (j = 0; j < sh_fg->face_groups[i].n_faces; ++j)
-            printf("%d ", sh_fg->face_groups[i].face_idx[j]);
+        static int acc;
+        for (j = 0; j < face_group_size; ++j)
+            printf("%d ", mp_face_groups_arr[acc + j]);
+        acc += face_group_size-1;
         printf("\n");
     }
 
