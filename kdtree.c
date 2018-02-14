@@ -127,25 +127,6 @@ void nearest(struct kd_node_t *root, struct kd_node_t *nd, int i, int dim,
     nearest(dx > 0 ? root->right : root->left, nd, i, dim, best, best_dist);
 }
 
-typedef struct {
-    int n_vertices;
-    int n_faces;
-    vertex_t vertices[1]; //...n_vertices
-    // followed by:
-    // face_t faces[1]; // 1..n fac
-    // starting at &vertices[n_vertices+1]
-} mesh_struct;
-
-typedef struct {
-    int n_vertices;
-    vertex_t vertices[1];
-} shmem_vertices;
-
-typedef struct {
-    int n_faces;
-    face2_t faces[1];
-} shmem_faces;
-
 typedef int face2_t[3];
 
 int main(void)
