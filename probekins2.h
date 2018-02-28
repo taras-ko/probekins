@@ -3,6 +3,7 @@
 
 #define SHMEM_KEY 4711 // a famous and very old-fashioned german perfume brand
 
+#pragma pack(push, 4)
 typedef struct {
     double coord[3];
     int face_group_size;
@@ -22,5 +23,6 @@ typedef struct {
     // int face_groups[1]; // 1..n_face_groups
     // starting at &faces[n_faces]
 } mesh_struct;
+#pragma pack(pop)
 
 #endif //PROBEKINS2_H
