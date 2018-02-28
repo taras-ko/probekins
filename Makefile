@@ -1,4 +1,3 @@
 CFLAGS = -g
+LDFLAGS = -lm
 
-default:
-	$(CC) -lm kdtree.c

@@ -25,7 +25,7 @@ hdr = Hdr.pack(n_vertices, n_faces, n_face_groups)
 vertices = \
     Vertex.pack(-150.0, 111.0, 2.1, 2) + \
     Vertex.pack(-12.0, 180.0, 1.4, 3) + \
-    Vertex.pack(-44.0, 121.0, 1.2, 2) + \
+    Vertex.pack(-44.0, -121.0, 1.2, 2) + \
     Vertex.pack(210.0, -120.0, 0.2, 1) + \
     Vertex.pack(-100.0, 200.0, 0.5, 1)
 faces = \
