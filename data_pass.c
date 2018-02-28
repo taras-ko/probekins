@@ -2,7 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
 #include "probekins2.h"
+#include "data_pass.h"
+
+#define SHM_MODE 0666 | IPC_CREAT
+int shmid;
+int shmsz;
 
 int main()
 {
@@ -20,6 +29,19 @@ int main()
         sizeof(vertex_t) * n_vertices +
         sizeof(face_t) * n_faces +
         sizeof(int) * n_face_groups;
+
+    shmsz = ms_size;
+    if ((shmid = shmget(SHMEM_KEY, shmsz, SHM_MODE)) == -1)
+    {
+        perror("failed"); exit(1);
+    }
+
+    char *shmptr;
+    if ((shmptr = shmat(shmid, 0, 0)) == (void *)-1)
+    {
+        perror("shmat failed"); exit(1);
+    }
+    printf("shared memory attached from %p to %p\n", (void*)shmptr, (void*)shmptr+shmsz);
 
     printf("Bytes allocated: %d\n", ms_size);
 
@@ -78,26 +100,19 @@ int main()
     mp_face_groups_arr[7] = 1;
     mp_face_groups_arr[8] = 2;
 
-    int i;
+    printf("print data struct");
+    print_mesh_struct(mp);
 
-    printf("Number of vertices: %d\n", mp->n_vertices);
-    printf("Number of faces: %d\n", mp->n_faces);
-    printf("Size of face groups array: %d\n", mp->n_face_groups);
+    memcpy(shmptr, mp, ms_size);
 
-    for (i = 0; i < mp->n_vertices; ++i)
-    {
-        printf("\tVertex %d\n", i);
-        int face_group_size = mp->vertices[i].face_group_size;
-        printf("\t face group size %d: ", face_group_size);
-
-        printf("\t Belongs to faces: ");
-        int j;
-        static int acc;
-        for (j = 0; j < face_group_size; ++j)
-            printf("%d ", mp_face_groups_arr[acc + j]);
-        acc += face_group_size-1;
-        printf("\n");
-    }
+    print_mesh_struct((mesh_struct *)shmptr);
 
     free(mp);
+
+    getchar();
+
+    if (shmctl(shmid, IPC_RMID, 0) <0)
+    {
+        perror("shmctl failed"); exit(1);
+    }
 }

@@ -1,6 +1,8 @@
 #ifndef PROBEKINS2_H
 #define PROBEKINS2_H
 
+#define SHMEM_KEY 4711 // a famous and very old-fashioned german perfume brand
+
 typedef struct {
     double coord[3];
     int face_group_size;
