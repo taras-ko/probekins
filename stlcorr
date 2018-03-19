@@ -1,9 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 import sys,os
 #import hal
 from struct import *
 from optparse import Option, OptionParser
+import sysv_ipc
+import struct
+
 
 import stltool
 
@@ -23,6 +26,7 @@ options = [Option( '-d','--debug', action='store_true', dest='debug', help="enab
            Option( '-g','--gcode', action='store_true', dest='gcode', help="generate G-code to preview STL mesh"),
            Option( '-b','--binary', action='store_true', dest='binary', help="save as binary STL format (default ASCII)"),
            Option( '-B','--bbox', action='store_true', dest='bbox', help="display the bounding box of the result mesh"),
+           Option( '-L','--load-sysv', action='store_true', dest='load_sysv', help="Load data to sysv shmem buffer"),
           ]
 
 def set_header(b,nvert,nface):
@@ -52,17 +56,52 @@ def debug_file(filename):
     (vertices, faces) = a.unique_vertices(a.facets)
 
     # Intialize list
-    lst = []
+    face_groups = []
     for vertex_idx in xrange(len(vertices)):
-        lst.append([])
+        face_groups.append([])
 
     for face_idx in xrange(len(faces)):
         for vertex_idx in faces[face_idx]:
-            lst[vertex_idx].append(face_idx)
+            face_groups[vertex_idx].append(face_idx)
 
-    for i in xrange(len(lst)):
+    for i in xrange(len(vertices)):
         print vertices[i]
-        print lst[i]
+
+    for i in xrange(len(face_groups)):
+        print face_groups[i]
+
+def load_sysv(filename):
+    a = stltool.stl(filename)
+    (vertices, faces) = a.unique_vertices(a.facets)
+
+    face_groups = []
+    for vertex_idx in xrange(len(vertices)):
+        face_groups.append([])
+
+    for face_idx in xrange(len(faces)):
+        for vertex_idx in faces[face_idx]:
+            face_groups[vertex_idx].append(face_idx)
+
+    Hdr = Struct('iii')
+    Vertex = Struct('dddi')
+    Face = Struct('iii')
+
+    nv = len(vertices)
+    nf = len(faces)
+    nfg = len(face_groups)
+
+    shm_sz = Hdr.size + nv*Vertex.size + nf*Face.size + nfg*calcsize('i')
+
+    if opts.debug:
+        print >> sys.stderr, "%d vertices, %d faces, %d face groups" % (nv,nf,nfg)
+        print >> sys.stderr, "shared memory size %d" % (shm_sz)
+
+#    memory = sysv_ipc.SharedMemory(4714, flags=sysv_ipc.IPC_CREAT, size=shm_sz)
+
+    hdr = Hdr.pack(nv, nf, nfg)
+    for v in vertices:
+        vertices += Vertex.pack()
+
 
 def load_file(b, filename):
     a = stltool.stl(filename)
@@ -185,6 +224,9 @@ def main():
         gcode(s,filename,scale,rotate,translate)
     else:
         s.export(binary=opts.binary)
+
+    if opts.load_sysv:
+        sysv_load()
 
     debug_file(filename)
 
