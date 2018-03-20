@@ -94,36 +94,53 @@ def sysv_load(filename):
     nf = len(faces)
     nfg = len(face_groups)
 
-    shm_sz = Hdr.size + nv*Vertex.size + nf*Face.size + nfg*calcsize('i')
+    Header = Hdr.pack(nv, nf, nfg)
+    Vertices = Vertex.pack(vertices[0][0], vertices[0][1], vertices[0][2], len(face_groups[0]))
+    for v in vertices[1:]:
+        idx = vertices.index(v)
+        Vertices += Vertex.pack(v[0],v[1],v[2],len(face_groups[idx]))
+
+    Faces = Face.pack(faces[0][0],faces[0][1],faces[0][2])
+    for f in faces[1:]:
+        Faces += Face.pack(f[0], f[1], f[2])
+
+    idx=0
+    FaceGroups = pack('i', face_groups[0][0])
+
+    idx += 1
+    for i in xrange(len(face_groups[0])):
+        if i==0:
+            continue
+        FaceGroups += pack('i', face_groups[0][i])
+        idx += 1
+        
+    for group in face_groups[1:]:
+        for face_idx in group:
+            FaceGroups += pack('i', face_idx)
+            idx += 1
+
+    shm_sz = Hdr.size + nv*Vertex.size + nf*Face.size + idx*calcsize('i')
 
     if opts.debug:
         print >> sys.stderr, "%d vertices, %d faces, %d face groups" % (nv,nf,nfg)
         print >> sys.stderr, "shared memory size %d" % (shm_sz)
 
-#    memory = sysv_ipc.SharedMemory(4714, flags=sysv_ipc.IPC_CREAT, size=shm_sz)
+    memory = sysv_ipc.SharedMemory(4715, flags=sysv_ipc.IPC_CREAT, size=shm_sz)
+    offset = 0
+    memory.write(Header)
 
-    hdr = Hdr.pack(nv, nf, nfg)
-    Vertices = Vertex.pack(vertices[0][0], vertices[0][1], vertices[0][2], len(face_groups[0]))
-    for v in vertices[0:]:
-        idx = vertices.index(v)
-        Vertices += Vertex.pack(v[0],v[1],v[2],len(face_groups[idx]))
+    offset = Hdr.size
+    memory.write(Vertices, offset)
 
-    Faces = Face.pack(faces[0][0],faces[0][1],faces[0][2])
-    for f in faces[0:]:
-        Faces += Face.pack(f[0], f[1], f[2])
+    offset += nv*Vertex.size
+    memory.write(Faces, offset)
 
-    idx=0
-    FaceGroups = pack('i', face_groups[0][0])
-    idx += 1
-    for i in xrange(len(face_groups[0])-1):
-        FaceGroups += pack('i', face_groups[0][i])
-        idx += 1
-        
-    for group in face_groups[0:]:
-        for face_idx in group:
-            FaceGroups += pack('i', face_idx)
-            idx += 1
+    offset += nf*Face.size
+    memory.write(FaceGroups, offset)
 
+    raw_input("PRESS ENTER TO CONTINUE")
+
+    memory.remove()
 
 def load_file(b, filename):
     a = stltool.stl(filename)
@@ -247,10 +264,10 @@ def main():
     else:
         s.export(binary=opts.binary)
 
+    debug_file(filename)
     if opts.load_sysv:
         sysv_load(filename)
 
-#    debug_file(filename)
 
 if __name__ == '__main__':
     main()

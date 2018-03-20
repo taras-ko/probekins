@@ -1,7 +1,7 @@
 #ifndef PROBEKINS2_H
 #define PROBEKINS2_H
 
-#define SHMEM_KEY 4711 // a famous and very old-fashioned german perfume brand
+#define SHMEM_KEY 4715 // a famous and very old-fashioned german perfume brand
 
 
 #pragma pack(push, 4)

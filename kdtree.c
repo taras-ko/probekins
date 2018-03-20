@@ -135,7 +135,7 @@ int main(void)
     int shmid;
     int shmsz = 224;
 
-    if ((shmid = shmget(4714, shmsz, 0666)) == -1)
+    if ((shmid = shmget(SHMEM_KEY, shmsz, 0666)) == -1)
     {
         perror("failed"); exit(1);
     }
