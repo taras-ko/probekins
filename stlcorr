@@ -67,10 +67,14 @@ def debug_file(filename):
     for i in xrange(len(vertices)):
         print vertices[i]
 
+    for f in faces:
+        print f
+
     for i in xrange(len(face_groups)):
         print face_groups[i]
+        print len(face_groups[i])
 
-def load_sysv(filename):
+def sysv_load(filename):
     a = stltool.stl(filename)
     (vertices, faces) = a.unique_vertices(a.facets)
 
@@ -99,8 +103,26 @@ def load_sysv(filename):
 #    memory = sysv_ipc.SharedMemory(4714, flags=sysv_ipc.IPC_CREAT, size=shm_sz)
 
     hdr = Hdr.pack(nv, nf, nfg)
-    for v in vertices:
-        vertices += Vertex.pack()
+    Vertices = Vertex.pack(vertices[0][0], vertices[0][1], vertices[0][2], len(face_groups[0]))
+    for v in vertices[0:]:
+        idx = vertices.index(v)
+        Vertices += Vertex.pack(v[0],v[1],v[2],len(face_groups[idx]))
+
+    Faces = Face.pack(faces[0][0],faces[0][1],faces[0][2])
+    for f in faces[0:]:
+        Faces += Face.pack(f[0], f[1], f[2])
+
+    idx=0
+    FaceGroups = pack('i', face_groups[0][0])
+    idx += 1
+    for i in xrange(len(face_groups[0])-1):
+        FaceGroups += pack('i', face_groups[0][i])
+        idx += 1
+        
+    for group in face_groups[0:]:
+        for face_idx in group:
+            FaceGroups += pack('i', face_idx)
+            idx += 1
 
 
 def load_file(b, filename):
@@ -226,9 +248,9 @@ def main():
         s.export(binary=opts.binary)
 
     if opts.load_sysv:
-        sysv_load()
+        sysv_load(filename)
 
-    debug_file(filename)
+#    debug_file(filename)
 
 if __name__ == '__main__':
     main()
