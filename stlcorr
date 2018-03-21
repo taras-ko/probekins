@@ -143,8 +143,7 @@ def sysv_load(filename):
     memory.write(Faces, offset)
 
     offset += nf*Face.size
-    mem = pack('9i',0,2,0,1,2,0,1,1,2)
-    memory.write(mem, offset)
+    memory.write(FaceGroups, offset)
 
     raw_input("PRESS ENTER TO CONTINUE")
 
