@@ -10,7 +10,7 @@ static inline void print_mesh_struct(mesh_struct *mp)
 
     face_t* mp_faces = (face_t*) &mp->vertices[mp->n_vertices];
     int* mp_face_groups_arr = (int*) &mp_faces[mp->n_faces];
-    int acc = 0;
+    int base_offset = 0;
 
     printf("Faces are: \n");
     for (int i = 0; i < mp->n_faces; ++i)
@@ -33,10 +33,12 @@ static inline void print_mesh_struct(mesh_struct *mp)
         printf("\t Belongs to faces: ");
         int j;
 
+        int temp_offset = base_offset;
         for (j = 0; j < face_group_size; ++j)
-            printf("%d ", mp_face_groups_arr[acc + j]);
-
-        acc += face_group_size-1;
+        {
+            printf("%d ", mp_face_groups_arr[temp_offset + j]);
+            ++base_offset;
+        }
         printf("\n");
     }
 }

@@ -89,43 +89,50 @@ def sysv_load(filename):
     Hdr = Struct('iii')
     Vertex = Struct('dddi')
     Face = Struct('iii')
+    FaceGroupElem = Struct('i')
 
     nv = len(vertices)
     nf = len(faces)
     nfg = len(face_groups)
 
     Header = Hdr.pack(nv, nf, nfg)
+
+    #TODO: Replace this mess below!
     Vertices = Vertex.pack(vertices[0][0], vertices[0][1], vertices[0][2], len(face_groups[0]))
     for v in vertices[1:]:
         idx = vertices.index(v)
         Vertices += Vertex.pack(v[0],v[1],v[2],len(face_groups[idx]))
 
+    print face_groups
+
     Faces = Face.pack(faces[0][0],faces[0][1],faces[0][2])
     for f in faces[1:]:
         Faces += Face.pack(f[0], f[1], f[2])
 
-    idx=0
-    FaceGroups = pack('i', face_groups[0][0])
+    FaceGroups = FaceGroupElem.pack(face_groups[0][0])
+    print face_groups[0][0]
 
-    idx += 1
-    for i in xrange(len(face_groups[0])):
-        if i==0:
-            continue
-        FaceGroups += pack('i', face_groups[0][i])
-        idx += 1
-        
+    for face_idx in face_groups[0][1:]:
+        FaceGroups += FaceGroupElem.pack(face_idx)
+        print face_idx
+
     for group in face_groups[1:]:
         for face_idx in group:
-            FaceGroups += pack('i', face_idx)
-            idx += 1
+            FaceGroups += FaceGroupElem.pack(face_idx)
+            print face_idx
 
-    shm_sz = Hdr.size + nv*Vertex.size + nf*Face.size + idx*calcsize('i')
+    #Count number of
+    nfg_sum = 0
+    for group in face_groups:
+        nfg_sum += len(group)
+
+    shm_sz = Hdr.size + nv*Vertex.size + nf*Face.size + nfg_sum*calcsize('i')
 
     if opts.debug:
         print >> sys.stderr, "%d vertices, %d faces, %d face groups" % (nv,nf,nfg)
         print >> sys.stderr, "shared memory size %d" % (shm_sz)
 
-    memory = sysv_ipc.SharedMemory(4715, flags=sysv_ipc.IPC_CREAT, size=shm_sz)
+    memory = sysv_ipc.SharedMemory(4716, flags=sysv_ipc.IPC_CREAT, size=shm_sz)
     offset = 0
     memory.write(Header)
 
@@ -136,7 +143,8 @@ def sysv_load(filename):
     memory.write(Faces, offset)
 
     offset += nf*Face.size
-    memory.write(FaceGroups, offset)
+    mem = pack('9i',0,2,0,1,2,0,1,1,2)
+    memory.write(mem, offset)
 
     raw_input("PRESS ENTER TO CONTINUE")
 
@@ -267,7 +275,6 @@ def main():
     debug_file(filename)
     if opts.load_sysv:
         sysv_load(filename)
-
 
 if __name__ == '__main__':
     main()
