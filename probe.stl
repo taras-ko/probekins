@@ -1,0 +1,23 @@
+solid foo
+  facet normal 0 0 0
+   outer loop
+    vertex -150.000000 111.000000 2.100000
+    vertex -12.000000 180.000000 1.400000
+    vertex -44.000000 -121.000000 1.200000
+   endloop
+  endfacet
+  facet normal 0 0 0
+   outer loop
+    vertex -12.000000 180.000000 1.400000
+    vertex 210.000000 -120.000000 0.200000
+    vertex -44.000000 -121.000000 1.200000
+   endloop
+  endfacet
+  facet normal 0 0 0
+   outer loop
+    vertex -100.000000 200.000000 0.500000
+    vertex -12.000000 180.000000 1.400000
+    vertex -150.000000 111.000000 2.100000
+   endloop
+  endfacet
+endsolid foo
