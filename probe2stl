@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #
 # probe2stl reads x,y,z points from stdin, and creates a triangular mesh
 # opionally (-i inifile) the machine boundaries are read from the ini file (AXIS_0/1, MIN/MAX_LIMIT)

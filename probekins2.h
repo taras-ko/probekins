@@ -30,4 +30,4 @@ typedef struct {
 } mesh_struct;
 #pragma pack(pop)
 
-#endif //PROBEKINS2_H
+#endif //PROBEKINS_H

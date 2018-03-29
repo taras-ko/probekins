@@ -19,7 +19,7 @@ shm_sz = \
     n_face_groups*calcsize('i')
 print "Allocating {} bytes in shared memory".format(shm_sz)
 
-memory = sysv_ipc.SharedMemory(4714, flags=sysv_ipc.IPC_CREAT, size=shm_sz)
+memory = sysv_ipc.SharedMemory(4716, flags=sysv_ipc.IPC_CREAT, size=shm_sz)
 
 hdr = Hdr.pack(n_vertices, n_faces, n_face_groups)
 vertices = \
